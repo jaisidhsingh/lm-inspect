@@ -87,26 +87,37 @@ def recurrent_layer_sim(example):
             u = u * model.emb_scale
         return u
 
-    s = initialise_state(x, model) 
+    s = initialise_state(x, model)
+    start_point = 3 
 
     layer_outputs = []
+    saved_points = []
+
     for step in range(4):
         s = model.transformer.adapter(torch.cat([s, x], dim=-1))
         for ridx, block in enumerate(model.transformer.core_block, start=1):
-            s, _ = block(s, freqs_cis, idx + ridx, None, None, False) 
-            layer_outputs.append(s)
+            if step == 0 and start_point > 0 and ridx < start_point:
+                continue
 
-    layer_outputs = torch.stack(layer_outputs, dim=0).view(4 * 4, -1)
+            else:
+                s, _ = block(s, freqs_cis, idx + ridx, None, None, False) 
+                layer_outputs.append(s)
+                saved_points.append((step, ridx))
+
+    N = len(layer_outputs)
+    layer_outputs = torch.stack(layer_outputs, dim=0).view(N, -1)
     layer_outputs /= layer_outputs.norm(dim=-1, keepdim=True)
 
     sim = (layer_outputs @ layer_outputs.T).cpu().numpy()
+    plt.figure(figsize=(16, 8))
     plt.imshow(sim)
-    plt.xticks([i for i in range(16)])
-    plt.yticks([i for i in range(16)])
+    plt.xticks([i for i in range(N)], [str(x) for x in saved_points])
+    plt.yticks([i for i in range(N)], [str(x) for x in saved_points])
     plt.title("Cosine similarity between outputs of the 4-layers recurrent block\nover 4 recurrent steps.")
     plt.xlabel("Layer index")
     plt.ylabel("Layer index")
-    plt.savefig("recurrent_layer_sims.png")
+    plt.savefig("rec_3.png")
+    print(saved_points)
 
 def plot_sims(sim1, sim2):
     fig, axes = plt.subplots(1, 2)
@@ -132,6 +143,6 @@ def plot_sims(sim1, sim2):
 if __name__ == "__main__":
     example = "This is an example sentence."
     recurrent_layer_sim(example)
-    sim1 = mamba_layer_sim(example)
-    sim2 = llm_layer_sim(example)
-    plot_sims(sim1, sim2)
+    # sim1 = mamba_layer_sim(example)
+    # sim2 = llm_layer_sim(example)
+    # plot_sims(sim1, sim2)
