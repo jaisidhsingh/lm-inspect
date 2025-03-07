@@ -90,20 +90,27 @@ def recurrent_layer_sim(example):
     s = initialise_state(x, model)
     start_point = 3 
 
-    layer_outputs = []
-    saved_points = []
+    layer_outputs = [s]
+    saved_points = [(0, 0)]
+    block_indices = [1, 2, 3]
+    num_steps = 4
 
-    for step in range(4):
+    num_blocks = len(model.transformer.core_block)
+
+    for step in range(num_steps):
         s = model.transformer.adapter(torch.cat([s, x], dim=-1))
         for ridx, block in enumerate(model.transformer.core_block, start=1):
-            if step == 0 and start_point > 0 and ridx < start_point:
-                continue
-
-            else:
+        
+            if ridx in block_indices and ridx < num_blocks:
                 s, _ = block(s, freqs_cis, idx + ridx, None, None, False) 
                 layer_outputs.append(s)
-                saved_points.append((step, ridx))
-
+                saved_points.append((step+1, ridx))
+            
+            if ridx == num_blocks and step == num_steps-1:
+                s, _ = block(s, freqs_cis, idx + ridx, None, None, False) 
+                layer_outputs.append(s)
+                saved_points.append((step+1, ridx))
+    
     N = len(layer_outputs)
     layer_outputs = torch.stack(layer_outputs, dim=0).view(N, -1)
     layer_outputs /= layer_outputs.norm(dim=-1, keepdim=True)
@@ -113,10 +120,10 @@ def recurrent_layer_sim(example):
     plt.imshow(sim)
     plt.xticks([i for i in range(N)], [str(x) for x in saved_points])
     plt.yticks([i for i in range(N)], [str(x) for x in saved_points])
-    plt.title("Cosine similarity between outputs of the 4-layers recurrent block\nover 4 recurrent steps.")
+    plt.title(f"Cosine similarity between outputs of the {num_blocks}-layers recurrent block\nover {num_steps} recurrent steps.")
     plt.xlabel("Layer index")
     plt.ylabel("Layer index")
-    plt.savefig("rec_3.png")
+    plt.savefig("rec_4.png")
     print(saved_points)
 
 def plot_sims(sim1, sim2):
