@@ -7,3 +7,7 @@
 ### How do recurrent layers behave?
 
 <img src="recurrent_layer_sims.png">
+
+### Perturbing the recurrent pass
+
+<img src="rec_4.png">
