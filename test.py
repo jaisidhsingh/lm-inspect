@@ -8,7 +8,7 @@ warnings.simplefilter("ignore")
 
 FAST_ROOT = os.getenv("FAST_ROOT")
 def hf_model_path(model_id):
-    return os.path.join(FAST_ROOT, "hf_cache", model_id)
+    return os.path.join(FAST_ROOT, "hf_cache", "models", model_id)
 
 @torch.no_grad()
 def mamba_layer_sim(example):
@@ -123,7 +123,7 @@ def recurrent_layer_sim(example):
     plt.title(f"Cosine similarity between outputs of the {num_blocks}-layers recurrent block\nover {num_steps} recurrent steps.")
     plt.xlabel("Layer index")
     plt.ylabel("Layer index")
-    plt.savefig("rec_4.png")
+    plt.savefig("rec_5.png")
     print(saved_points)
 
 def plot_sims(sim1, sim2):
